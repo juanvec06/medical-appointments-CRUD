@@ -1,10 +1,12 @@
 const express = require('express');
 const app = express();
+const cors = require('cors');
 const patientsController = require('./controllers/patientsController');
 const officesController = require('./controllers/officesController');
 const appointmentsController = require('./controllers/appointmentsController');
 
 app.use(express.json());
+app.use(cors());
 app.use('/api/patients', patientsController);
 app.use('/api/offices', officesController);
 app.use('/api/appointments', appointmentsController);
