@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const patientService = require('../../domain/services/patientService');
 const Joi = require('joi');
-
+//Lo que se pone en el body de postman:
 const schema = Joi.object({
     name_patient: Joi.string().required(),
     phone_patient: Joi.string().allow(null, ''),
@@ -20,13 +20,14 @@ router.get('/:id', (req, res) => {
 });
 
 // Create a new patient
+//Cuando se elimina el id 1 no se puede volver a crear con ese id
 router.post('/', (req, res) => {
     const { error, value } = schema.validate(req.body);
     if (error) return res.status(400).json({ error: error.message });
     const created = patientService.create(value);
     res.status(201).json(created);
 });
-
+//Revisar put
 // Update an existing patient
 router.put('/:id', (req, res) => {
     const { error, value } = schema.validate(req.body);

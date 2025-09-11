@@ -4,7 +4,7 @@ const cors = require('cors');
 const patientsController = require('./controllers/patientsController');
 const officesController = require('./controllers/officesController');
 const appointmentsController = require('./controllers/appointmentsController');
-
+//Lo que se pone en postman:
 app.use(express.json());
 app.use(cors());
 app.use('/api/patients', patientsController);
