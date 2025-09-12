@@ -1,10 +1,36 @@
-// app.js for appointments view
+// app.js
+// Conecta únicamente Appointments con los endpoints:
+// GET  http://localhost:3000/api/appointments
+// POST http://localhost:3000/api/appointments
+// Otras funcionalidades: pendientes (UI marcadas como pending)
 
 const API_BASE = 'http://localhost:3000/api';
 const content = document.getElementById('content-area');
+const navButtons = Array.from(document.querySelectorAll('.nav-btn'));
+
+navButtons.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    navButtons.forEach(b => b.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    const target = e.currentTarget.dataset.target;
+    if (target === 'appointments') renderAppointments();
+    else renderPending(target);
+  });
+});
 
 // Inicial: mostrar appointments
 renderAppointments();
+
+/* ----------------- PENDIENTES ----------------- */
+function renderPending(target) {
+  content.innerHTML = `
+    <div class="page-header">
+      <div class="page-title">${capitalize(target)}</div>
+      <div class="controls"><div class="muted">Funcionalidad pendiente — debe integrarse con backend</div></div>
+    </div>
+    <div class="muted">Esta sección está marcada como pendiente. Integración con backend no implementada.</div>
+  `;
+}
 
 function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 
@@ -186,5 +212,15 @@ async function handleCreateAppointment(ev){
 }
 
 /* small util */
-function escapeHtml(str){ if(!str && str!==0) return ''; return String(str).replace(/[&<>\"']/g, function(s){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s]; }); }
-/* ----------------- END OF FILE ----------------- */
+function escapeHtml(str) {
+  if (!str && str !== 0) return '';
+  return String(str).replace(/[&<>"']/g, function(s) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[s];
+  });
+}

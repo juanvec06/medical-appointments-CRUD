@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Clinic Dashboard</title>
+  <title>Clinic Dashboard — Appointments</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -14,16 +14,15 @@
     </div>
 
     <nav class="nav-actions" role="navigation" aria-label="Main navigation">
-      <a href="./patientsView/index.html" class="nav-btn">Patients</a>
-      <a href="./appointmentView/index.html" class="nav-btn">Appointments</a>
-      <a href="./officeView/index.html" class="nav-btn">Office</a>
+      <button id="btn-patients" data-target="patients" class="nav-btn">Patients (pending)</button>
+      <button id="btn-appointments" data-target="appointments" class="nav-btn active">Appointments</button>
+      <button id="btn-office" data-target="office" class="nav-btn">Office (pending)</button>
     </nav>
   </header>
 
   <main class="container">
     <section id="content-area" class="card">
-      <h2>Bienvenido a Clinic Dashboard</h2>
-      <p class="muted">Seleccione una opción del menú de navegación para comenzar.</p>
+      <!-- Contenido dinámico cargado por app.js -->
     </section>
   </main>
 
