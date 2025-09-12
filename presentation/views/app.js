@@ -1,172 +1,253 @@
-// app.js for appointments view
+/**
+ * =================================================================
+ * Clinic Dashboard - Single Page Application (SPA) Main Script
+ * =================================================================
+ */
 
-const API_BASE = 'http://localhost:3000/api';
-const content = document.getElementById('content-area');
+// --- 1. CONFIGURACIÓN GLOBAL Y HELPERS ---
 
-// Inicial: mostrar appointments
-renderAppointments();
+const API_URL = 'http://localhost:3000/api';
+const contentArea = document.getElementById('app-content');
 
-function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+// Instancia del Modal de Bootstrap para Pacientes
+const patientModal = new bootstrap.Modal(document.getElementById('patient-modal'));
 
-/* ----------------- APPOINTMENTS ----------------- */
-function renderAppointments(){
-  content.innerHTML = `
-    <div class="page-header">
-      <div class="page-title">Appointments</div>
-      <div class="controls">
-        <input type="date" id="filterDate" />
-        <button class="btn primary" id="refreshAppts">Refresh</button>
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:12px">
-      <h4 style="margin:0 0 8px 0">Create appointment</h4>
-      <form id="apptForm">
-        <div class="form-row">
-          <label>office_id</label>
-          <input name="office_id" type="number" placeholder="ej: 2" required />
-        </div>
-        <div class="form-row">
-          <label>Fecha y hora</label>
-          <input name="datetime_local" type="datetime-local" required />
-        </div>
-        <div class="form-row">
-          <label>Reason</label>
-          <input name="reason_appointment" type="text" placeholder="Motivo..." required />
-        </div>
-        <div class="form-row">
-          <label>patient_ids</label>
-          <input name="patient_ids" type="text" placeholder="IDs separados por comas, ej: 4,5,6" required />
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:8px">
-          <button type="submit" class="btn primary">Create</button>
-        </div>
-      </form>
-    </div>
-
-    <div>
-      <h4>List of appointments</h4>
-      <div id="appointmentsContainer" class="appt-list muted">Cargando...</div>
-    </div>
-  `;
-
-  document.getElementById('refreshAppts').addEventListener('click', fetchAppointments);
-  document.getElementById('apptForm').addEventListener('submit', handleCreateAppointment);
-  document.getElementById('filterDate').addEventListener('change', fetchAppointments);
-  // initial load
-  fetchAppointments();
+function escapeHtml(str) {
+  if (!str && str !== 0) return '';
+  return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
 }
 
-/* Utility: format local Date -> YYYY-MM-DDTHH:mm:ss.SSS±HH:MM (offset)
-   We must produce an ISO-like string including the local timezone offset (e.g. -05:00).
-*/
+/**
+ * Formatea un objeto Date local a un string ISO con el offset de la zona horaria.
+ * @param {Date} date - El objeto Date a formatear.
+ * @returns {string} - ej: "2025-09-08T10:00:00.000-05:00"
+ */
 function formatLocalWithOffset(date) {
-  // date: Date object (local time)
-  // build YYYY-MM-DDTHH:mm:ss.SSS
-  function pad(n, w=2){ return String(n).padStart(w,'0'); }
-  const year = date.getFullYear();
-  const month = pad(date.getMonth()+1);
-  const day = pad(date.getDate());
-  const hours = pad(date.getHours());
-  const minutes = pad(date.getMinutes());
-  const seconds = pad(date.getSeconds());
-  const ms = pad(date.getMilliseconds(), 3);
-
-  // timezone offset in minutes: note getTimezoneOffset returns minutes to add to local time to get UTC,
-  // e.g. for -05:00 it returns 300. We want sign reversed.
-  const offsetMinutes = -date.getTimezoneOffset(); // positive for ahead of UTC, negative for behind
+  function pad(n, w = 2) { return String(n).padStart(w, '0'); }
+  const year = date.getFullYear(), month = pad(date.getMonth() + 1), day = pad(date.getDate());
+  const hours = pad(date.getHours()), minutes = pad(date.getMinutes()), seconds = pad(date.getSeconds()), ms = pad(date.getMilliseconds(), 3);
+  const offsetMinutes = -date.getTimezoneOffset();
   const sign = offsetMinutes >= 0 ? '+' : '-';
   const absOffset = Math.abs(offsetMinutes);
   const offHours = pad(Math.floor(absOffset / 60));
   const offMins = pad(absOffset % 60);
-
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${sign}${offHours}:${offMins}`;
 }
 
-/* ----------------- FETCH: GET appointments ----------------- */
-async function fetchAppointments(){
+
+// --- 2. LÓGICA DE LA VISTA DE PACIENTES ---
+
+function renderPatientsView() {
+  contentArea.innerHTML = `
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Pacientes</h2>
+        <button id="add-patient-btn" class="btn btn-primary">Nuevo Paciente</button>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover patient-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="patient-list"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('add-patient-btn').addEventListener('click', openPatientCreateModal);
+  document.getElementById('patient-form').addEventListener('submit', handlePatientFormSubmit);
+  fetchAndRenderPatients();
+}
+
+async function fetchAndRenderPatients() {
+  const patientList = document.getElementById('patient-list');
+  if (!patientList) return;
+  patientList.innerHTML = '<tr><td colspan="5" class="text-center">Cargando...</td></tr>';
+  try {
+    const response = await fetch(`${API_URL}/patients`);
+    if (!response.ok) throw new Error('Network response was not ok');
+    const patients = await response.json();
+    patientList.innerHTML = '';
+    if (patients.length === 0) {
+      patientList.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No hay pacientes registrados.</td></tr>';
+      return;
+    }
+    const template = document.getElementById('patient-row-template');
+    patients.forEach(patient => {
+      const rowClone = template.content.cloneNode(true);
+      const cells = rowClone.querySelectorAll('td');
+      cells[0].textContent = patient.id;
+      cells[1].textContent = patient.name_patient;
+      cells[2].textContent = patient.phone_patient || 'N/A';
+      cells[3].textContent = patient.email_patient || 'N/A';
+      patientList.appendChild(rowClone);
+    });
+  } catch (error) {
+    console.error('Error fetching patients:', error);
+    patientList.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">Error al cargar los pacientes.</td></tr>`;
+  }
+}
+
+function openPatientCreateModal() {
+  const form = document.getElementById('patient-form');
+  const modalTitle = document.getElementById('modal-title');
+  form.reset();
+  form.dataset.mode = 'create';
+  modalTitle.textContent = 'Nuevo Paciente';
+  document.getElementById('id').readOnly = false;
+  patientModal.show();
+}
+
+async function handlePatientFormSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const patientData = {
+    id: Number(form.id.value), // Convertimos el valor a número
+    name_patient: form.name_patient.value,
+    phone_patient: form.phone_patient.value,
+    email_patient: form.email_patient.value,
+  };
+  try {
+    const response = await fetch(`${API_URL}/patients`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patientData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create patient');
+    }
+    patientModal.hide();
+    fetchAndRenderPatients();
+  } catch (error) {
+    console.error('Error creating patient:', error);
+    alert(`Error: ${error.message}`);
+  }
+}
+
+
+// --- 3. LÓGICA DE LA VISTA DE CITAS (AHORA IMPLEMENTADA) ---
+
+function renderAppointmentsView() {
+  contentArea.innerHTML = `
+    <div class="row">
+      <div class="col-lg-5">
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Crear Cita</h4>
+            <form id="apptForm">
+              <div class="mb-3">
+                <label class="form-label">ID del Consultorio</label>
+                <input name="office_id" type="number" class="form-control" placeholder="Ej: 2" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Fecha y Hora</label>
+                <input name="datetime_local" type="datetime-local" class="form-control" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Motivo</label>
+                <input name="reason_appointment" type="text" class="form-control" placeholder="Motivo de la consulta..." required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">IDs de Pacientes</label>
+                <input name="patient_ids" type="text" class="form-control" placeholder="IDs separados por coma, ej: 101,102" required />
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">Crear Cita</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">Lista de Citas</h4>
+          <input type="date" id="filterDate" class="form-control" style="width: auto;" />
+        </div>
+        <div id="appointmentsContainer" class="list-group">
+          <!-- Las citas se cargarán aquí -->
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('apptForm').addEventListener('submit', handleCreateAppointment);
+  document.getElementById('filterDate').addEventListener('change', fetchAppointments);
+  fetchAppointments(); // Carga inicial
+}
+
+async function fetchAppointments() {
   const container = document.getElementById('appointmentsContainer');
-  const filterDate = document.getElementById('filterDate').value; // format YYYY-MM-DD or empty
-  container.innerHTML = 'Cargando...';
+  const filterDate = document.getElementById('filterDate').value;
+  if (!container) return;
+  container.innerHTML = `<div class="list-group-item text-muted">Cargando...</div>`;
 
   try {
-    const res = await fetch(`${API_BASE}/appointments`, { method: 'GET' });
+    const res = await fetch(`${API_URL}/appointments`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    // optionally filter by date (if filterDate given) by comparing date part of appointment date
-    const list = Array.isArray(data) ? data : [];
-    const filtered = filterDate ? list.filter(a => {
-      // try to parse a.date_appointment or date_appointment-like fields
-      const d = a.date_appointment || a.date || a.dateAppointment || '';
-      // take first 10 chars YYYY-MM-DD
-      return String(d).slice(0,10) === filterDate;
-    }) : list;
-
+    const list = await res.json();
+    
+    const filtered = filterDate ? list.filter(a => String(a.date_appointment).slice(0, 10) === filterDate) : list;
+    
     if (filtered.length === 0) {
-      container.innerHTML = '<div class="muted">No hay citas.</div>';
+      container.innerHTML = '<div class="list-group-item text-muted">No hay citas para la fecha seleccionada.</div>';
       return;
     }
 
     container.innerHTML = '';
     filtered.forEach(a => {
       const el = document.createElement('div');
-      el.className = 'appt';
-      const dateStr = a.date_appointment || a.date || '';
+      el.className = 'list-group-item';
       const reason = a.reason_appointment || a.reason || '';
       const patients = Array.isArray(a.patient_ids) ? a.patient_ids.join(', ') : (a.patient_ids || '');
+      // Formatear fecha para ser más legible
+      const dateObj = new Date(a.date_appointment);
+      const formattedDate = isNaN(dateObj) ? 'Fecha inválida' : dateObj.toLocaleString();
+
       el.innerHTML = `
-        <div>
-          <div style="font-weight:700">${escapeHtml(reason)}</div>
-          <div class="muted">${escapeHtml(String(dateStr))} · Patients: ${escapeHtml(String(patients))}</div>
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1">${escapeHtml(reason)}</h6>
+          <small>${formattedDate}</small>
         </div>
+        <p class="mb-1">Consultorio: ${a.office_id}</p>
+        <small class="text-muted">Pacientes: ${escapeHtml(String(patients))}</small>
       `;
       container.appendChild(el);
     });
-
   } catch (err) {
     console.error(err);
-    container.innerHTML = `<div class="muted">Error al obtener citas: ${escapeHtml(err.message)}</div>`;
+    container.innerHTML = `<div class="list-group-item text-danger">Error al obtener citas: ${escapeHtml(err.message)}</div>`;
   }
 }
 
-/* ----------------- CREATE appointment (POST) ----------------- */
-async function handleCreateAppointment(ev){
+async function handleCreateAppointment(ev) {
   ev.preventDefault();
   const form = ev.target;
   const fd = new FormData(form);
   const office_id = Number(fd.get('office_id'));
-  const datetimeLocal = fd.get('datetime_local'); // ex: "2025-09-08T10:00"
+  const datetimeLocal = fd.get('datetime_local');
   const reason_appointment = fd.get('reason_appointment').trim();
   const patient_ids_raw = fd.get('patient_ids').trim();
 
-  // patient_ids: parse comma-separated numbers
-  const patient_ids = patient_ids_raw.split(',')
-    .map(s => s.trim())
-    .filter(s => s.length>0)
-    .map(s => Number(s))
-    .filter(n => !Number.isNaN(n));
+  const patient_ids = patient_ids_raw.split(',').map(s => s.trim()).filter(Boolean);
 
   if (!office_id || !datetimeLocal || !reason_appointment || patient_ids.length === 0) {
-    alert('Por favor completa todos los campos correctamente (office_id, fecha/hora, reason, patient_ids).');
+    alert('Por favor completa todos los campos correctamente.');
     return;
   }
-
-  // convert datetime-local string -> Date object (local)
-  // datetimeLocal is like "2025-09-08T10:00"
-  const localDate = new Date(datetimeLocal);
-  // Format into ISO-like with local offset, e.g. "2025-09-08T10:00:00.000-05:00"
-  const date_appointment = formatLocalWithOffset(localDate);
-
-  const payload = {
-    office_id,
-    date_appointment,
-    reason_appointment,
-    patient_ids
-  };
+  
+  const date_appointment = formatLocalWithOffset(new Date(datetimeLocal));
+  const payload = { office_id, date_appointment, reason_appointment, patient_ids };
 
   try {
-    const res = await fetch(`${API_BASE}/appointments`, {
+    const res = await fetch(`${API_URL}/appointments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -175,8 +256,6 @@ async function handleCreateAppointment(ev){
       const txt = await res.text();
       throw new Error(`HTTP ${res.status} - ${txt}`);
     }
-    const created = await res.json();
-    alert('Cita creada correctamente.');
     form.reset();
     fetchAppointments();
   } catch (err) {
@@ -185,6 +264,118 @@ async function handleCreateAppointment(ev){
   }
 }
 
-/* small util */
-function escapeHtml(str){ if(!str && str!==0) return ''; return String(str).replace(/[&<>\"']/g, function(s){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s]; }); }
-/* ----------------- END OF FILE ----------------- */
+
+// --- 4. LÓGICA DE LA VISTA DE CONSULTORIOS ---
+
+function renderOfficesView() {
+  contentArea.innerHTML = `
+    <div class="row">
+      <div class="col-md-5">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Crear Consultorio</h4>
+            <form id="officeForm">
+              <div class="mb-3">
+                <label for="name_office" class="form-label">Nombre del consultorio</label>
+                <input id="name_office" name="name_office" type="text" class="form-control" placeholder="Ej: Odontología" required>
+              </div>
+              <div class="mb-3">
+                <label for="location_office" class="form-label">Ubicación</label>
+                <input id="location_office" name="location_office" type="text" class="form-control" placeholder="Ej: Piso 2, consultorio 203" required>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">Crear</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-7">
+        <h4>Lista de Consultorios</h4>
+        <div id="officesContainer" class="list-group"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('officeForm').addEventListener('submit', handleOfficeFormSubmit);
+  loadOffices();
+}
+
+async function loadOffices() {
+    const container = document.getElementById('officesContainer');
+    if (!container) return;
+    container.innerHTML = `<div class="list-group-item text-muted">Cargando...</div>`;
+    try {
+        const res = await fetch(`${API_URL}/offices`);
+        const offices = await res.json();
+        if (!offices || offices.length === 0) {
+            container.innerHTML = `<div class="list-group-item text-muted">No hay consultorios registrados.</div>`;
+            return;
+        }
+        container.innerHTML = "";
+        offices.forEach(o => {
+            const item = document.createElement("div");
+            item.className = "list-group-item";
+            item.textContent = `${o.name_office} — ${o.location_office}`;
+            container.appendChild(item);
+        });
+    } catch (err) {
+        container.innerHTML = `<div class="list-group-item text-danger">Error al conectar con el servidor.</div>`;
+        console.error(err);
+    }
+}
+
+async function handleOfficeFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const office = {
+        name_office: form.name_office.value,
+        location_office: form.location_office.value
+    };
+    try {
+        const res = await fetch(`${API_URL}/offices`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(office),
+        });
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || 'Error desconocido');
+        }
+        form.reset();
+        await loadOffices();
+    } catch (err) {
+        alert("Error: " + err.message);
+        console.error("Error creando oficina", err);
+    }
+}
+
+
+// --- 5. ROUTER (El que decide qué vista mostrar) ---
+
+const routes = {
+  '#/patients': renderPatientsView,
+  '#/appointments': renderAppointmentsView,
+  '#/office': renderOfficesView,
+};
+
+function router() {
+  const path = window.location.hash || '#/patients';
+  const viewRenderer = routes[path] || renderNotFound;
+  viewRenderer();
+  updateActiveNavLink(path);
+}
+
+function renderNotFound() {
+    contentArea.innerHTML = `<div class="alert alert-danger">Error 404: Página no encontrada.</div>`;
+}
+
+function updateActiveNavLink(path) {
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === path);
+    });
+}
+
+// --- 6. INICIALIZACIÓN ---
+
+window.addEventListener('hashchange', router);
+window.addEventListener('load', router);
