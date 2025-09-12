@@ -4,6 +4,8 @@ const patientService = require('../../domain/services/patientService');
 const Joi = require('joi');
 
 const schema = Joi.object({
+    // Añadimos la validación para el ID
+    id: Joi.number().integer().required(),
     name_patient: Joi.string().required(),
     phone_patient: Joi.string().allow(null, ''),
     email_patient: Joi.string().email().allow(null, '')

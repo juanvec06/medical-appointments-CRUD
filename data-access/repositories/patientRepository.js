@@ -2,9 +2,11 @@ const db = require('../db');
 
 module.exports = {
     create: (patient) => {
-        const info = db.prepare('INSERT INTO patient (name_patient, phone_patient, email_patient) VALUES (?, ?, ?)')
-            .run(patient.name_patient, patient.phone_patient || null, patient.email_patient || null);
-        return { id: info.lastInsertRowid, ...patient };
+        // La consulta ahora incluye el campo 'id'
+        db.prepare('INSERT INTO patient (id, name_patient, phone_patient, email_patient) VALUES (?, ?, ?, ?)')
+            .run(patient.id, patient.name_patient, patient.phone_patient || null, patient.email_patient || null);
+        // Devolvemos el objeto 'patient' que ya contiene el ID que le pasamos
+        return patient;
     },
 
     findAll: () => db.prepare('SELECT * FROM patient').all(),
