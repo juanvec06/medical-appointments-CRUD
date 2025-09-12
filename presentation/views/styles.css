@@ -1,45 +1,66 @@
-:root{
-  --bg:#f4f7fb;
-  --nav:#0f1724;
-  --accent:#2563eb;
-  --muted:#6b7280;
-  --card:#ffffff;
+/* =============================================== */
+/* 1. VARIABLES GLOBALES Y ESTILOS BASE            */
+/* =============================================== */
+
+:root {
+  --bs-body-bg: #f4f7fb; /* Sobrescribimos el fondo de Bootstrap */
+  --bs-body-color: #0b1220; /* Sobrescribimos el color de texto de Bootstrap */
+  --bs-primary: #2563eb; /* Definimos el color primario de Bootstrap con nuestro color */
+  --bs-muted: #6b7280; /* Color para texto secundario */
+  --bs-nav-dark: #0f1724; /* Un color personalizado para nuestra barra de nav */
 }
-*{box-sizing:border-box}
-body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:#0b1220}
 
-.navbar{
-  display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:linear-gradient(90deg,var(--nav),#16202b);color:#fff;
+body {
+  /* La fuente Inter no es estándar, asegúrate de importarla si la quieres usar */
+  /* Por ahora, usamos el stack de fuentes sans-serif de Bootstrap que es muy similar */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
 }
-.brand{display:flex;align-items:center;gap:12px}
-.logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7dd3fc);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
-.title{font-weight:700;font-size:14px}
 
-.nav-actions{display:flex;gap:8px}
-.nav-btn{
-  background:transparent;border:none;color:#dbeafe;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;transition:all .15s;
+/* =============================================== */
+/* 2. ESTILOS DE COMPONENTES PERSONALIZADOS        */
+/* =============================================== */
+
+/* Estilo personalizado para el logo en la barra de navegación */
+.logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--bs-primary), #7dd3fc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
 }
-.nav-btn:hover{background:rgba(255,255,255,0.05)}
-.nav-btn.active{background:#ffffff20;color:#fff;}
 
-.container{max-width:1100px;margin:22px auto;padding:18px}
-.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(11,17,26,0.06)}
+/* Estilo para la tabla de pacientes, para que se integre con Bootstrap */
+.patient-table {
+  /* Estas clases ya las aplica Bootstrap, pero las mantenemos por si se usan solas */
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
 
-.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.page-title{font-size:18px;font-weight:700}
-.controls{display:flex;gap:8px;align-items:center}
-.controls input, .controls select, .controls button{padding:8px;border-radius:8px;border:1px solid #e6eef8}
+.patient-table th {
+  /* Hacemos que el encabezado de la tabla sea un poco más sutil */
+  background-color: #f9fafb;
+  font-size: 0.75rem; /* 12px */
+  text-transform: uppercase;
+  color: var(--bs-muted);
+  font-weight: 600;
+}
 
-.muted{color:var(--muted);font-size:13px}
+/* Ajuste para que el color del enlace activo en la navbar sea nuestro color primario */
+.navbar-dark .navbar-nav .nav-link.active {
+    color: #7dd3fc; /* Un color más brillante para destacar */
+}
 
-.appt-list{display:block;gap:8px}
-.appt{display:flex;justify-content:space-between;padding:10px;border-radius:8px;border:1px solid #eef5ff;margin-bottom:8px}
-.btn{padding:8px 10px;border-radius:8px;border:none;cursor:pointer}
-.btn.primary{background:var(--accent);color:white}
-.btn.ghost{background:transparent;border:1px solid #e6eef8}
+/* =============================================== */
+/* 3. CLASES DE UTILIDAD (OPCIONAL)                */
+/* =============================================== */
 
-.form-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
-.form-row label{min-width:110px;color:var(--muted);font-size:13px}
-.form-row input, .form-row select, .form-row textarea{flex:1;padding:8px;border-radius:8px;border:1px solid #e6eef8}
-
-.note{font-size:13px;color:var(--muted);margin-top:8px}
+/* Bootstrap ya tiene una clase .text-muted, pero si quieres una tuya, aquí está */
+.muted {
+  color: var(--bs-muted);
+  font-size: 0.9em;
+}

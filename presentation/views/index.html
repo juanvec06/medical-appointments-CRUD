@@ -2,31 +2,110 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clinic Dashboard</title>
+
+  <!-- 1. Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- 2. Tu CSS personalizado (para sobreescribir o añadir estilos) -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="navbar">
-    <div class="brand">
-      <div class="logo">C</div>
-      <div class="title">Clinic Dashboard</div>
-    </div>
 
-    <nav class="nav-actions" role="navigation" aria-label="Main navigation">
-      <a href="./patientsView/index.html" class="nav-btn">Patients</a>
-      <a href="./appointmentView/index.html" class="nav-btn">Appointments</a>
-      <a href="./officeView/index.html" class="nav-btn">Office</a>
-    </nav>
+  <!-- =============================================== -->
+  <!-- BARRA DE NAVEGACIÓN (UNIFICADA Y PERMANENTE)    -->
+  <!-- =============================================== -->
+  <header class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#/patients">
+        <div class="logo me-2">C</div>
+        <span>Clinic Dashboard</span>
+      </a>
+      <nav class="navbar-nav ms-auto">
+        <!-- Usamos hashes (#) para la navegación SPA -->
+        <a class="nav-link" href="#/patients">Pacientes</a>
+        <a class="nav-link" href="#/appointments">Citas</a>
+        <a class="nav-link" href="#/office">Consultorios</a>
+      </nav>
+    </div>
   </header>
 
-  <main class="container">
-    <section id="content-area" class="card">
-      <h2>Bienvenido a Clinic Dashboard</h2>
-      <p class="muted">Seleccione una opción del menú de navegación para comenzar.</p>
-    </section>
+  <!-- =============================================== -->
+  <!-- ÁREA DE CONTENIDO DINÁMICO (EL "ESCENARIO")     -->
+  <!-- =============================================== -->
+  <main class="container my-4" id="app-content">
+    <!-- El contenido de cada vista se cargará aquí con JavaScript -->
+    <!-- Por defecto, al cargar, podría mostrar un "cargando..." -->
+    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
   </main>
 
+  <!-- =============================================== -->
+  <!-- ELEMENTOS GLOBALES (MODALES Y PLANTILLAS)      -->
+  <!-- =============================================== -->
+
+  <!-- Modal de Paciente (Reconstruido con Bootstrap) -->
+  <div class="modal fade" id="patient-modal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="patient-form">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modal-title">Nuevo Paciente</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <div class="mb-3">
+                <label for="id" class="form-label">ID del Paciente (DNI, etc.)</label>
+                <input type="number" class="form-control" id="id" name="id" required>
+              </div>
+              <div class="mb-3">
+                <label for="name_patient" class="form-label">Nombre</label>
+                <input type="text" class="form-control" id="name_patient" name="name_patient" required>
+              </div>
+              <div class="mb-3">
+                <label for="phone_patient" class="form-label">Teléfono</label>
+                <input type="tel" class="form-control" id="phone_patient" name="phone_patient">
+              </div>
+              <div class="mb-3">
+                <label for="email_patient" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email_patient" name="email_patient">
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plantilla para la fila de la tabla de Pacientes -->
+  <template id="patient-row-template">
+    <tr>
+      <td data-label="ID"></td>
+      <td data-label="Nombre"></td>
+      <td data-label="Teléfono"></td>
+      <td data-label="Email"></td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-primary btn-edit" title="Editar paciente">✏️</button>
+        <button class="btn btn-sm btn-outline-danger btn-delete" title="Eliminar paciente">🗑️</button>
+      </td>
+    </tr>
+  </template>
+
+
+  <!-- =============================================== -->
+  <!-- SCRIPTS (SIEMPRE AL FINAL)                      -->
+  <!-- =============================================== -->
+  <!-- 1. Bootstrap JS (con todas sus dependencias) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- 2. Tu script principal de la aplicación -->
   <script src="app.js"></script>
 </body>
 </html>
