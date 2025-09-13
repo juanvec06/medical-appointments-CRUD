@@ -1,12 +1,17 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const path = require('path');
 const patientsController = require('./controllers/patientsController');
 const officesController = require('./controllers/officesController');
 const appointmentsController = require('./controllers/appointmentsController');
 
 app.use(express.json());
 app.use(cors());
+
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, 'front')));
+
 app.use('/api/patients', patientsController);
 app.use('/api/offices', officesController);
 app.use('/api/appointments', appointmentsController);
