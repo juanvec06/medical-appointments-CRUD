@@ -56,24 +56,24 @@ async function fetchAppointments() {
 
             // Contenedor para la información de la cita
             const infoDiv = `
-        <div>
-          <div class="d-flex w-100 justify-content-between">
-            <h6 class="mb-1">${escapeHtml(reason)}</h6>
-            <small>${formattedDate}</small>
-          </div>
-          <p class="mb-1">Consultorio: ${a.office_id}</p>
-          <small class="text-muted">Pacientes: ${escapeHtml(String(patients))}</small>
-        </div>
-      `;
+            <div>
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">${escapeHtml(reason)}</h6>
+                <small> ${formattedDate}</small>
+            </div>
+            <p class="mb-1">Consultorio: ${a.office_id}</p>
+            <small class="text-muted">Pacientes: ${escapeHtml(String(patients))}</small>
+            </div>
+            `;
 
             // Contenedor para los botones de acción
             // Añadimos data-id para poder identificar la cita en los eventos
             const actionsDiv = `
-        <div>
-          <button class="btn btn-sm btn-light btn-modify" data-id="${escapeHtml(a.id)}" title="Modificar">🛠️</button>
-          <button class="btn btn-sm btn-light btn-delete" data-id="${escapeHtml(a.id)}" title="Eliminar">🗑️</button>
-        </div>
-      `;
+            <div>
+            <button class="btn btn-md btn-light btn-modify" data-id="${escapeHtml(a.id)}" title="Modificar">🛠️</button>
+            <button class="btn btn-md btn-light btn-delete" data-id="${escapeHtml(a.id)}" title="Eliminar">🗑️</button>
+            </div>
+            `;
 
             el.innerHTML = infoDiv + actionsDiv;
             container.appendChild(el);
@@ -134,13 +134,19 @@ function handleModifyAppointment(appointmentId) {
     alert(`Modificar la cita con ID: ${appointmentId}`);
 }
 
-function handleDeleteAppointment(appointmentId) {
-    // Lógica para eliminar la cita.
-    // Por ejemplo: mostrar un confirm() y luego hacer una petición DELETE a la API.
-    console.log(`Función handleDeleteAppointment llamada para la cita ID: ${appointmentId}`);
+async function handleDeleteAppointment(appointmentId) {
     if (confirm(`¿Estás seguro de que quieres eliminar la cita con ID: ${appointmentId}?`)) {
-        alert('Aquí iría la llamada a la API para eliminar.');
-        // Ejemplo: fetch(`${API_URL}/appointments/${appointmentId}`, { method: 'DELETE' });
+        try {
+            const res = await fetch(`${API_URL}/appointments/${appointmentId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const txt = await res.text();
+                throw new Error(`HTTP ${res.status} - ${txt}`);
+            }
+            fetchAppointments();
+        } catch (err) {
+            console.error(err);
+            alert('Error eliminando cita: ' + err.message);
+        }
     }
 }
 
