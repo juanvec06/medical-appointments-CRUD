@@ -32,16 +32,13 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <!-- El ID "modal-title" que tu JS necesita -->
         <h5 class="modal-title" id="modal-title">Formulario de Paciente</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <!-- El FORM con el ID "patient-form" que tu JS necesita -->
         <form id="patient-form">
           <div class="mb-3">
             <label for="id" class="form-label">Cédula / ID</label>
-            <!-- El input con ID "id" que tu JS necesita -->
             <input type="number" class="form-control" id="id" name="id" required>
           </div>
           <div class="mb-3">
@@ -66,6 +63,25 @@
   </div>
 </div>
 
+<!-- MODAL GLOBAL PARA CONFIRMACIONES Y ALERTAS (NUEVO) -->
+<div class="modal fade" id="app-modal" tabindex="-1" aria-labelledby="app-modal-title" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="app-modal-title">Confirmación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="app-modal-body"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="app-modal-cancel-btn" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="app-modal-confirm-btn">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- PLANTILLA GLOBAL PARA LAS FILAS DE PACIENTES -->
 <template id="patient-row-template">
   <tr>
@@ -83,7 +99,6 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   
-  <!-- ¡CAMBIO IMPORTANTE! Añadimos type="module" -->
   <script src="app.js" type="module"></script>
 </body>
 </html>
