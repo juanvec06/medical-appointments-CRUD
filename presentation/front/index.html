@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <!-- ... tu head no cambia ... -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clinic Dashboard</title>
@@ -59,6 +58,43 @@
           <div class="modal-footer mt-4">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button type="submit" class="btn btn-primary">Guardar Paciente</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GLOBAL PARA CITAS -->
+<div class="modal fade" id="appointment-modal" tabindex="-1" aria-labelledby="appointment-modal-title" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="appointment-modal-title">Modificar Cita</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="appointment-form">
+          <input type="hidden" id="appointment_id" name="appointment_id">
+          <div class="mb-3">
+            <label for="modal_office_id" class="form-label">ID del Consultorio</label>
+            <input type="number" class="form-control" id="modal_office_id" name="office_id" placeholder="Ej: 2" required>
+          </div>
+          <div class="mb-3">
+            <label for="modal_datetime_local" class="form-label">Fecha y Hora</label>
+            <input type="datetime-local" class="form-control" id="modal_datetime_local" name="datetime_local" required>
+          </div>
+          <div class="mb-3">
+            <label for="modal_reason_appointment" class="form-label">Motivo</label>
+            <input type="text" class="form-control" id="modal_reason_appointment" name="reason_appointment" placeholder="Motivo de la consulta..." required>
+          </div>
+          <div class="mb-3">
+            <label for="modal_patient_ids" class="form-label">IDs de Pacientes</label>
+            <input type="text" class="form-control" id="modal_patient_ids" name="patient_ids" placeholder="IDs separados por coma, ej: 101,102" required>
+          </div>
+          <div class="modal-footer mt-4">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
           </div>
         </form>
       </div>

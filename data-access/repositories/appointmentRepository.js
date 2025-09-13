@@ -16,11 +16,22 @@ module.exports = {
         return module.exports.findById(appointmentId);
     },
 
-    findAll: () => db.prepare(
-        `SELECT a.*, o.name_office as office_name
-         FROM appointment a
-         LEFT JOIN office o ON o.id = a.office_id`
-    ).all(),
+    findAll: () => {
+        const appointments = db.prepare(
+            `SELECT a.*, o.name_office as office_name
+             FROM appointment a
+             LEFT JOIN office o ON o.id = a.office_id`
+        ).all();
+        const patients = db.prepare(
+            `SELECT ap.appointment_id, p.name_patient
+             FROM patient p
+             INNER JOIN appointment_patient ap ON ap.patient_id = p.id`
+        ).all();
+        return appointments.map(app => ({
+            ...app,
+            patients: patients.filter(p => p.appointment_id === app.id).map(p => p.name_patient)
+        }));
+    },
 
     findById: (id) => {
         const appointment = db.prepare('SELECT * FROM appointment WHERE id = ?').get(id);

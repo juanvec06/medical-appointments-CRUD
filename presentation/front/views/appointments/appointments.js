@@ -1,3 +1,4 @@
+
 // Constantes y Helpers que esta vista necesita
 const API_URL = 'http://localhost:3000/api';
 
@@ -34,6 +35,7 @@ async function fetchAppointments() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const list = await res.json();
 
+        // Asumiendo que la API devuelve un 'id' único para cada cita.
         const filtered = filterDate ? list.filter(a => String(a.date_appointment).slice(0, 10) === filterDate) : list;
 
         if (filtered.length === 0) {
@@ -44,21 +46,36 @@ async function fetchAppointments() {
         container.innerHTML = '';
         filtered.forEach(a => {
             const el = document.createElement('div');
-            el.className = 'list-group-item';
+            // Usamos flexbox para alinear el contenido principal a la izquierda y los botones a la derecha.
+            el.className = 'list-group-item d-flex justify-content-between align-items-center';
+
             const reason = a.reason_appointment || a.reason || '';
-            const patients = Array.isArray(a.patient_ids) ? a.patient_ids.join(', ') : (a.patient_ids || '');
-            // Formatear fecha para ser más legible
+            const patients = Array.isArray(a.patients) ? a.patients.join(', ') : (a.patients || '');
             const dateObj = new Date(a.date_appointment);
             const formattedDate = isNaN(dateObj) ? 'Fecha inválida' : dateObj.toLocaleString();
 
-            el.innerHTML = `
-        <div class="d-flex w-100 justify-content-between">
-          <h6 class="mb-1">${escapeHtml(reason)}</h6>
-          <small>${formattedDate}</small>
+            // Contenedor para la información de la cita
+            const infoDiv = `
+        <div>
+          <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">${escapeHtml(reason)}</h6>
+            <small>${formattedDate}</small>
+          </div>
+          <p class="mb-1">Consultorio: ${a.office_id}</p>
+          <small class="text-muted">Pacientes: ${escapeHtml(String(patients))}</small>
         </div>
-        <p class="mb-1">Consultorio: ${a.office_id}</p>
-        <small class="text-muted">Pacientes: ${escapeHtml(String(patients))}</small>
       `;
+
+            // Contenedor para los botones de acción
+            // Añadimos data-id para poder identificar la cita en los eventos
+            const actionsDiv = `
+        <div>
+          <button class="btn btn-sm btn-light btn-modify" data-id="${escapeHtml(a.id)}" title="Modificar">🛠️</button>
+          <button class="btn btn-sm btn-light btn-delete" data-id="${escapeHtml(a.id)}" title="Eliminar">🗑️</button>
+        </div>
+      `;
+
+            el.innerHTML = infoDiv + actionsDiv;
             container.appendChild(el);
         });
     } catch (err) {
@@ -66,6 +83,7 @@ async function fetchAppointments() {
         container.innerHTML = `<div class="list-group-item text-danger">Error al obtener citas: ${escapeHtml(err.message)}</div>`;
     }
 }
+
 
 async function handleCreateAppointment(ev) {
     ev.preventDefault();
@@ -104,10 +122,60 @@ async function handleCreateAppointment(ev) {
     }
 }
 
+// --- Modal para Modificar Citas (No Implementado) ---
+function openModifyModal(appointmentId, officeId, datetime, reasonAppointment, patientIds) {
+    
+}
+// --- Funciones para manejar los botones (aún no implementadas) ---
+function handleModifyAppointment(appointmentId) {
+    // Lógica para modificar la cita.
+    // Por ejemplo: abrir un modal con la información de la cita para editarla.
+    console.log(`Función handleModifyAppointment llamada para la cita ID: ${appointmentId}`);
+    alert(`Modificar la cita con ID: ${appointmentId}`);
+}
+
+function handleDeleteAppointment(appointmentId) {
+    // Lógica para eliminar la cita.
+    // Por ejemplo: mostrar un confirm() y luego hacer una petición DELETE a la API.
+    console.log(`Función handleDeleteAppointment llamada para la cita ID: ${appointmentId}`);
+    if (confirm(`¿Estás seguro de que quieres eliminar la cita con ID: ${appointmentId}?`)) {
+        alert('Aquí iría la llamada a la API para eliminar.');
+        // Ejemplo: fetch(`${API_URL}/appointments/${appointmentId}`, { method: 'DELETE' });
+    }
+}
+
+
 // --- Función de Inicialización (Exportada) ---
 
 export function initialize() {
-    document.getElementById('apptForm').addEventListener('submit', handleCreateAppointment);
-    document.getElementById('filterDate').addEventListener('change', fetchAppointments);
+    const apptForm = document.getElementById('apptForm');
+    const filterDate = document.getElementById('filterDate');
+    const appointmentsContainer = document.getElementById('appointmentsContainer');
+
     fetchAppointments();
+
+    if (apptForm) {
+        apptForm.addEventListener('submit', handleCreateAppointment);
+    }
+    if (filterDate) {
+        filterDate.addEventListener('change', fetchAppointments);
+    }
+
+    // Delegación de eventos para los botones de modificar y eliminar
+    if (appointmentsContainer) {
+        appointmentsContainer.addEventListener('click', (event) => {
+            const target = event.target;
+            // Busca el botón más cercano al elemento clickeado
+            const modifyButton = target.closest('.btn-modify');
+            const deleteButton = target.closest('.btn-delete');
+
+            if (modifyButton) {
+                const appointmentId = modifyButton.dataset.id;
+                handleModifyAppointment(appointmentId);
+            } else if (deleteButton) {
+                const appointmentId = deleteButton.dataset.id;
+                handleDeleteAppointment(appointmentId);
+            }
+        });
+    }
 }
