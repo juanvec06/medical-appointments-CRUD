@@ -1,60 +1,204 @@
-// Constantes que esta vista necesita
+/**
+ * @fileoverview Lógica del lado del cliente para la vista de Consultorios.
+ * Gestiona la obtención, renderizado, creación, edición y eliminación de consultorios,
+ * así como la interacción con los modales y la tabla de la interfaz de usuario.
+ * @module views/offices/offices
+ */
+
+// --- Constantes y Referencias Globales ---
+
 const API_URL = 'http://localhost:3000/api';
 
-// --- Funciones de la Vista de Consultorios ---
+/**
+ * Instancia del modal de Bootstrap para el formulario de consultorios.
+ * @type {bootstrap.Modal}
+ */
+const officeModal = new bootstrap.Modal(document.getElementById('office-modal'));
 
-async function loadOffices() {
-    const container = document.getElementById('officesContainer');
-    if (!container) return;
-    container.innerHTML = `<div class="list-group-item text-muted">Cargando...</div>`;
-    try {
-        const res = await fetch(`${API_URL}/offices`);
-        const offices = await res.json();
-        if (!offices || offices.length === 0) {
-            container.innerHTML = `<div class="list-group-item text-muted">No hay consultorios registrados.</div>`;
-            return;
-        }
-        container.innerHTML = "";
-        offices.forEach(o => {
-            const item = document.createElement("div");
-            item.className = "list-group-item";
-            item.textContent = `${o.name_office} — ${o.location_office}`;
-            container.appendChild(item);
-        });
-    } catch (err) {
-        container.innerHTML = `<div class="list-group-item text-danger">Error al conectar con el servidor.</div>`;
-        console.error(err);
+/**
+ * Referencia al formulario.
+ * @type {HTMLFormElement}
+ */
+const officeForm = document.getElementById('office-form');
+
+// --- Funciones de la Vista ---
+
+/**
+ * Obtiene la lista de consultorios desde la API y la renderiza en la tabla.
+ * @async
+ */
+async function fetchAndRenderOffices() {
+  const officeList = document.getElementById('office-list');
+  if (!officeList) return;
+
+  officeList.innerHTML = '<tr><td colspan="4" class="text-center">Cargando...</td></tr>';
+
+  try {
+    const response = await fetch(`${API_URL}/offices`);
+    if (!response.ok) throw new Error('Error al obtener consultorios');
+    const offices = await response.json();
+
+    officeList.innerHTML = '';
+    if (offices.length === 0) {
+      officeList.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No hay consultorios registrados.</td></tr>';
+      return;
     }
+
+    const template = document.getElementById('office-row-template');
+    offices.forEach(office => {
+      const rowClone = template.content.cloneNode(true);
+      const cells = rowClone.querySelectorAll('td');
+      cells[0].textContent = office.id;
+      cells[1].textContent = office.name_office;
+      cells[2].textContent = office.location_office;
+
+      const editBtn = rowClone.querySelector('.btn-outline-secondary');
+      editBtn.dataset.officeId = office.id;
+
+      const deleteBtn = rowClone.querySelector('.btn-outline-danger');
+      deleteBtn.dataset.officeId = office.id;
+
+      officeList.appendChild(rowClone);
+    });
+  } catch (error) {
+    console.error('Error cargando consultorios:', error);
+    officeList.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Error al cargar consultorios.</td></tr>`;
+  }
 }
 
-async function handleOfficeFormSubmit(e) {
-    e.preventDefault();
-    const form = e.target;
-    const office = {
-        name_office: form.name_office.value,
-        location_office: form.location_office.value
-    };
-    try {
-        const res = await fetch(`${API_URL}/offices`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(office),
-        });
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || 'Error desconocido');
-        }
-        form.reset();
-        await loadOffices();
-    } catch (err) {
-        alert("Error: " + err.message);
-        console.error("Error creando oficina", err);
-    }
+/**
+ * Abre el modal en modo creación.
+ */
+function openOfficeCreateModal() {
+  const modalTitle = document.getElementById('office-modal-title');
+  officeForm.reset();
+  officeForm.dataset.mode = 'create';
+  delete officeForm.dataset.officeId;
+  modalTitle.textContent = 'Nuevo Consultorio';
+  officeModal.show();
 }
 
-// --- Función de Inicialización (Exportada) ---
+/**
+ * Abre el modal en modo edición con datos cargados.
+ * @param {string|number} officeId
+ */
+async function openOfficeEditModal(officeId) {
+  try {
+    const response = await fetch(`${API_URL}/offices/${officeId}`);
+    if (!response.ok) throw new Error('No se pudo obtener el consultorio.');
+    const office = await response.json();
 
+    officeForm.reset();
+    officeForm.dataset.mode = 'edit';
+    officeForm.dataset.officeId = office.id;
+
+    document.getElementById('name_office').value = office.name_office;
+    document.getElementById('location_office').value = office.location_office;
+
+    officeModal.show();
+
+  } catch (error) {
+    console.error('Error abriendo modal de edición:', error);
+  }
+}
+
+
+
+/**
+ * Maneja el envío del formulario (crear/editar).
+ * @param {Event} event
+ */
+async function handleOfficeFormSubmit(event) {
+  event.preventDefault();
+
+  const mode = officeForm.dataset.mode;
+    const officeId = officeForm.dataset.officeId;
+
+  const officeData = {
+    name_office: officeForm.name_office.value,
+    location_office: officeForm.location_office.value,
+  };
+
+  const url = mode === 'edit'
+    ? `${API_URL}/offices/${officeId}`
+    : `${API_URL}/offices`;
+
+  const method = mode === 'edit' ? 'PUT' : 'POST';
+
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(officeData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Error al guardar consultorio');
+    }
+
+    officeModal.hide();
+    fetchAndRenderOffices();
+
+  } catch (error) {
+    console.error(`Error ${mode === 'edit' ? 'actualizando' : 'creando'} consultorio:`, error);
+  }
+}
+
+
+/**
+ * Elimina un consultorio.
+ * @param {string|number} officeId
+ */
+async function handleDeleteOffice(officeId) {
+  try {
+    const response = await fetch(`${API_URL}/offices/${officeId}`, { method: 'DELETE' });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'No se pudo eliminar consultorio.');
+    }
+    fetchAndRenderOffices();
+  } catch (error) {
+    console.error('Error eliminando consultorio:', error);
+    alert(error.message);
+  }
+}
+
+/**
+ * Delegación de eventos en la tabla.
+ * @param {Event} event
+ */
+async function handleTableActions(event) {
+  if (event.target.matches('.btn-outline-secondary')) {
+    const officeId = event.target.dataset.officeId;
+    await openOfficeEditModal(officeId);
+  }
+  if (event.target.matches('.btn-outline-danger')) {
+    const officeId = event.target.dataset.officeId;
+    const officeRow = event.target.closest('tr');
+    const officeName = officeRow.cells[1].textContent;
+
+    const confirmed = confirm(`¿Estás seguro de que deseas eliminar el consultorio "${officeName}"?`);
+    if (confirmed) {
+      await handleDeleteOffice(officeId);
+    }
+  }
+}
+
+// --- Inicialización ---
 export function initialize() {
-  document.getElementById('officeForm').addEventListener('submit', handleOfficeFormSubmit);
-  loadOffices();
+  const addOfficeBtn = document.getElementById('add-office-btn');
+  const officeList = document.getElementById('office-list');
+
+  if (officeForm) {
+    officeForm.addEventListener('submit', handleOfficeFormSubmit);
+  }
+  if (addOfficeBtn) {
+    addOfficeBtn.addEventListener('click', openOfficeCreateModal);
+  }
+  if (officeList) {
+    officeList.addEventListener('click', handleTableActions);
+  }
+
+  fetchAndRenderOffices();
 }
