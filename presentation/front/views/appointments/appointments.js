@@ -281,12 +281,8 @@ async function createAppointment(appointmentData) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Error response:', errorText);
-            try {
-                const errorData = JSON.parse(errorText);
-                throw new Error(errorData.error || 'Error al crear la cita');
-            } catch (parseError) {
-                throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
-            }
+            const errorData = JSON.parse(errorText);
+            throw new Error(errorData.error || 'Error al crear la cita');
         }
         
         return response.json();
