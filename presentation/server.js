@@ -8,8 +8,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-
-// --- Importación de Controladores ---
+const path = require('path');
 const patientsController = require('./controllers/patientsController');
 const officesController = require('./controllers/officesController');
 const appointmentsController = require('./controllers/appointmentsController');
@@ -28,12 +27,9 @@ app.use(express.json());
  */
 app.use(cors());
 
-// --- Montaje de Rutas de la API ---
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, 'front')));
 
-/**
- * Monta el controlador de pacientes en la ruta base '/api/patients'.
- * Todas las rutas definidas en `patientsController` estarán prefijadas por esta ruta.
- */
 app.use('/api/patients', patientsController);
 
 /**
