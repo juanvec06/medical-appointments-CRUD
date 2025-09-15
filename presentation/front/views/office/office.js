@@ -6,7 +6,10 @@
  */
 
 // --- Constantes y Referencias Globales ---
-
+/**
+ * URL base de la API del backend.
+ * @constant {string}
+ */
 const API_URL = 'http://localhost:3000/api';
 
 /**
@@ -25,7 +28,9 @@ const officeForm = document.getElementById('office-form');
 
 /**
  * Obtiene la lista de consultorios desde la API y la renderiza en la tabla.
+ * Muestra mensajes de carga, error o vacío según el estado.
  * @async
+ * @returns {Promise<void>}
  */
 async function fetchAndRenderOffices() {
   const officeList = document.getElementById('office-list');
@@ -67,7 +72,9 @@ async function fetchAndRenderOffices() {
 }
 
 /**
- * Abre el modal en modo creación.
+ * Abre el modal en modo creación de un nuevo consultorio.
+ * Limpia el formulario y establece el modo en "create".
+ * @returns {void}
  */
 function openOfficeCreateModal() {
   const modalTitle = document.getElementById('office-modal-title');
@@ -105,8 +112,10 @@ async function openOfficeEditModal(officeId) {
 
 
 /**
- * Maneja el envío del formulario (crear/editar).
- * @param {Event} event
+ * Abre el modal en modo edición con los datos del consultorio cargados.
+ * @async
+ * @param {string|number} officeId - ID del consultorio a editar.
+ * @returns {Promise<void>}
  */
 async function handleOfficeFormSubmit(event) {
   event.preventDefault();
@@ -147,8 +156,10 @@ async function handleOfficeFormSubmit(event) {
 
 
 /**
- * Elimina un consultorio.
- * @param {string|number} officeId
+ * Elimina un consultorio por su ID.
+ * @async
+ * @param {string|number} officeId - ID del consultorio a eliminar.
+ * @returns {Promise<void>}
  */
 async function handleDeleteOffice(officeId) {
   try {
@@ -165,8 +176,10 @@ async function handleDeleteOffice(officeId) {
 }
 
 /**
- * Delegación de eventos en la tabla.
- * @param {Event} event
+ * Maneja las acciones delegadas en la tabla (editar/eliminar).
+ * @async
+ * @param {Event} event - Evento de click en la tabla.
+ * @returns {Promise<void>}
  */
 async function handleTableActions(event) {
   if (event.target.matches('.btn-outline-secondary')) {
@@ -186,6 +199,13 @@ async function handleTableActions(event) {
 }
 
 // --- Inicialización ---
+/**
+ * Inicializa los eventos y renderiza la lista inicial de consultorios.
+ * - Asigna eventos al formulario, botón de creación y tabla.
+ * - Llama a la función de renderizado inicial.
+ * @function
+ * @returns {void}
+ */
 export function initialize() {
   const addOfficeBtn = document.getElementById('add-office-btn');
   const officeList = document.getElementById('office-list');
